@@ -7,7 +7,7 @@ public class Main {
         World world = new World();
         world.init();
 
-        SimPanel panel = new SimPanel(world);
+        SimPanel panel = new SimPanel(World.world);
         JFrame frame = new JFrame("Predator-Prey Simulation");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(panel);
@@ -16,7 +16,7 @@ public class Main {
         frame.setVisible(true);
 
         // Simulation loop
-        new Timer(400, e -> {
+        new Timer(1000, e -> {
             world.update();
             panel.repaint();
         }).start();

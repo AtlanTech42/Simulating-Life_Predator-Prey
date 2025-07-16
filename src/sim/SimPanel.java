@@ -4,9 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 
 public class SimPanel extends JPanel {
-    private World world;
+    private int[][] world;
 
-    public SimPanel(World world) {
+    public SimPanel(int[][] world) {
         this.world = world;
         setPreferredSize(new Dimension(World.WIDTH * 20, World.HEIGHT * 20));
     }
@@ -17,12 +17,11 @@ public class SimPanel extends JPanel {
 
         for (int y = 0; y < World.HEIGHT; y++) {
             for (int x = 0; x < World.WIDTH; x++) {
-                Entity e = world.get(x, y);
 
-                if (e instanceof Prey) {
-                    g.setColor(Color.GREEN);
-                } else if (e instanceof Predator) {
+                if (world[x][y] == 1) {
                     g.setColor(Color.RED);
+                } else if (world[x][y] == 2) {
+                    g.setColor(Color.GREEN);
                 } else {
                     g.setColor(Color.LIGHT_GRAY);
                 }

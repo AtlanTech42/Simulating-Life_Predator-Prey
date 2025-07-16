@@ -6,40 +6,46 @@ public class World {
     public static final int WIDTH = 20;
     public static final int HEIGHT = 20;
 
-    private Entity[][] grid = new Entity[WIDTH][HEIGHT];
+    // 0 = Empty
+    // 1 = Preditor
+    // 2 = Prey
+    public static int[][] world = new int[WIDTH][HEIGHT];
 
     public void init() {
         Random rand = new Random();
 
         // Add 20 prey
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 40; i++) {
             int x = rand.nextInt(WIDTH);
             int y = rand.nextInt(HEIGHT);
-            if (grid[x][y] == null) {
-                Prey prey = new Prey(x, y);
-                grid[x][y] = prey;
+            if (world[x][y] == 0 ) {
+                world[x][y] = 2;
             }
         }
-
+        /*
         // Add 5 predators
         for (int i = 0; i < 5; i++) {
             int x = rand.nextInt(WIDTH);
             int y = rand.nextInt(HEIGHT);
-            if (grid[x][y] == null) {
-                Predator predator = new Predator(x, y);
-                grid[x][y] = predator;
+            if (world[x][y] == 0) {
+                world[x][y] = 1;
             }
-        }
+        }*/
+        // hard code to test
+        world[10][10] = 1;
+        world[13][10] = 2;
+        world[10][13] = 2;
+        world[13][10] = 2;
     }
 
-    public List<int[]> getAdjacentEmpty(int x, int y) {
+    public static List<int[]> getAdjacentEmpty(int[][] newWorld, int x, int y) {
         List<int[]> options = new ArrayList<>();
         int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
 
         for (int[] dir : dirs) {
             int nx = x + dir[0];
             int ny = y + dir[1];
-            if (nx >= 0 && ny >= 0 && nx < WIDTH && ny < HEIGHT && grid[nx][ny] == null) {
+            if (nx >= 1 && ny >= 1 && nx < WIDTH - 1 && ny < HEIGHT - 1 && newWorld[nx][ny] == 0) {
                 options.add(new int[]{nx, ny});
             }
         }
@@ -47,7 +53,7 @@ public class World {
         return options;
     }
 
-    public List<int[]> getAdjacentPrey(int x, int y) {
+    public static List<int[]> getAdjacentPrey(int x, int y) {
         List<int[]> options = new ArrayList<>();
         int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
 
@@ -55,9 +61,9 @@ public class World {
             int nx = x + dir[0];
             int ny = y + dir[1];
             if (nx >= 0 && ny >= 0 && nx < WIDTH && ny < HEIGHT) {
-                Entity e = grid[nx][ny];
-                if (e instanceof Prey) {
+                if (world[nx][ny] == 2) {
                     options.add(new int[]{nx, ny});
+                    System.out.println("prey");
                 }
             }
         }
@@ -65,41 +71,98 @@ public class World {
         return options;
     }
 
-    public void update() {
-        // Copy of entities so we don’t act on new ones
-        List<Entity> toAct = new ArrayList<>();
+    //======================================
+    // getClosestPrey
+    // This code is to find any prey that are close to the predator
+    // so this can give the directions that they should go
+    //======================================
+    public static List<int[]> getClosestPrey(int x, int y) {
+        List<int[]> options = new ArrayList<>();
+        int[][] dirs = {         { 2,-1}, { 2, 0}, { 2, 1},
+                        { 1,-2}, { 1,-1},          { 1, 1}, { 1, 2},
+                        { 0,-2},                            { 0, 2},
+                        {-1,-2}, {-1,-1},          {-1, 1}, {-1, 2},
+                                 {-2,-1}, {-2, 0}, {-2, 1}};
 
-        for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                if (grid[x][y] != null) {
-                    toAct.add(grid[x][y]);
+        for (int[] dir : dirs) {
+            int nx = x + dir[0]; // Checks the cell relative to the current position of the predator
+            int ny = y + dir[1];
+            if (nx >= 0 && ny >= 0 && nx < WIDTH && ny < HEIGHT) { // Makes sure it's inside the bounds
+                if (world[nx][ny] == 2) {
+                    options.add(new int[]{nx, ny});
                 }
             }
         }
 
-        for (Entity e : toAct) {
-            e.act(this);
-        }
+        return options;
     }
+    //======================================
 
-    public void draw() {
+    //======================================
+    // getClosestPredator
+    // This code is to find any predator that are close to the prey
+    // so this can give the directions that they should not go
+    //======================================
+    public static List<int[]> getClosestPredator(int x, int y) {
+        List<int[]> options = new ArrayList<>();
+        int[][] dirs = {         { 2,-1}, { 2, 0}, { 2, 1},
+                        { 1,-2}, { 1,-1}, { 1, 0}, { 1, 1}, { 1, 2},
+                        { 0,-2}, { 0,-1},          { 0, 1}, { 0, 2},
+                        {-1,-2}, {-1,-1}, {-1, 0}, {-1, 1}, {-1, 2},
+                                 {-2,-1}, {-2, 0}, {-2, 1}};
+
+        for (int[] dir : dirs) {
+            int nx = x + dir[0]; // Checks the cell relative to the current position of the prey
+            int ny = y + dir[1];
+            if (nx >= 0 && ny >= 0 && nx < WIDTH && ny < HEIGHT) { // Makes sure it's inside the bounds
+                if (world[nx][ny] == 1) {
+                    options.add(new int[]{nx, ny});
+                }
+            }
+        }
+
+        return options;
+    }
+    //======================================
+
+    //======================================
+    // Methode to update the world
+    //======================================
+    public void update() {
+
+        int newWorld[][] = new int[WIDTH][HEIGHT]; // Create a temp world
+        // Clone the old world
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
-                Entity e = grid[x][y];
-                System.out.print((e == null ? "." : e.toString()) + " ");
+                newWorld[x][y] = world[x][y];
             }
-            System.out.println();
+        }
+
+        // All predators act
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                if ( world[x][y] == 1 ) {
+                    newWorld = Predator.act(world, newWorld, x, y);
+                }
+            }
+        }
+
+        // All prey act
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                if ( world[x][y] == 2 ) {
+                    newWorld = Prey.act(world, newWorld, x, y);
+                }
+            }
+        }
+
+        // Update the original world
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                world[x][y] = newWorld[x][y];
+            }
         }
     }
+    //======================================
 
-    public Entity get(int x, int y) {
-        if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) return null;
-        return grid[x][y];
-    }
-
-    public void set(int x, int y, Entity e) {
-        if (x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT) {
-            grid[x][y] = e;
-        }
-    }
 }
